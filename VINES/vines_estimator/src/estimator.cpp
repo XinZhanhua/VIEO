@@ -10,10 +10,10 @@ void Estimator::setParameter()
 {
     for (int i = 0; i < NUM_OF_CAM; i++)
     {
-        tic[i] = TIE[i] + TEC[i];
+        // tic[i] = TIE[i] + TEC[i];
         tie[i] = TIE[i];
         tec[i] = TEC[i];
-        ric[i] = RIE[i];
+        // ric[i] = RIE[i];
         rie[i] = RIE[i];
         
         axis_ce[i] = axis[i];
@@ -151,6 +151,10 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
     
     last_encoder_data = encoder_data;
     last_time = header.stamp.toSec();
+
+    tic[frame_count] = tie[0] + Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * tec[0];
+    ric[frame_count] = Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * rie[0];
+
     // last_continuous_encoder_data = continuous_encoder_data;
     // if(encoder_data < 2048)
     //     Encoder_angle[frame_count][0] = -(double)encoder_data / 4096 * 2 * CV_PI;
@@ -201,13 +205,15 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                 last_P = Ps[WINDOW_SIZE];
                 last_R0 = Rs[0];
                 last_P0 = Ps[0];
-                for(int i = 0; i < NUM_OF_CAM; i++)
-                {
-                    ric[i] = RIE[0];
-                    tic[i] = TIE[0];
-                }
+
                 rie[0] = RIE[0];
                 tie[0] = TIE[0];
+                tec[0] = TEC[0];
+                for(int i = 0; i <= WINDOW_SIZE; i++)
+                {
+                    ric[i] = RIE[0];
+                    tic[i] = TIE[0]+TEC[0];
+                }
             }
             else
                 slideWindow();
@@ -546,8 +552,8 @@ void Estimator::vector2double()
         para_SpeedBias[i][7] = Bgs[i].y();
         para_SpeedBias[i][8] = Bgs[i].z();
 
-        if(ENCODER_ENABLE)
-            para_angle[i][0] = Encoder_angle[i][0];
+        // if(ENCODER_ENABLE)
+        //     para_angle[i][0] = Encoder_angle[i][0];
         // para_angle[i][0] = 0;
     }
     for (int i = 0; i < NUM_OF_CAM; i++)
@@ -570,17 +576,17 @@ void Estimator::vector2double()
             // tic[i] = T.block<3, 1>(0, 3);
 
         }
-        
-        para_Ex_Pose[i][0] = tie[i].x();
-        para_Ex_Pose[i][1] = tie[i].y();
-        para_Ex_Pose[i][2] = tie[i].z();
-        // tic[i] = tie[i] + Utility::Rodrigues(axis_ce[i], Encoder_angle[WINDOW_SIZE][0]) * tec[i];
-        // Eigen::Matrix3d R = Utility::Rodrigues(axis_ce[i], -(encoder_data - 2048) / 4096 * 2 * CV_PI);
-        Quaterniond q{rie[i]};
-        para_Ex_Pose[i][3] = q.x();
-        para_Ex_Pose[i][4] = q.y();
-        para_Ex_Pose[i][5] = q.z();
-        para_Ex_Pose[i][6] = q.w();
+        for (int j = 0; j <= WINDOW_SIZE; j++)
+        {
+            para_Ex_Pose[j][0] = tic[j].x();
+            para_Ex_Pose[j][1] = tic[j].y();
+            para_Ex_Pose[j][2] = tic[j].z();
+            Quaterniond q{ric[j]};
+            para_Ex_Pose[j][3] = q.x();
+            para_Ex_Pose[j][4] = q.y();
+            para_Ex_Pose[j][5] = q.z();
+            para_Ex_Pose[j][6] = q.w();
+        }
         // ric[i] = Utility::Rodrigues(axis_ce[i], Encoder_angle[WINDOW_SIZE][0]) * rie[i];
 
         // last_encoder_data = encoder_data;
@@ -667,25 +673,22 @@ void Estimator::double2vector()
     }
     for (int i = 0; i < NUM_OF_CAM; i++)
     {
-        tie[i] = Vector3d(para_Ex_Pose[i][0],
-                          para_Ex_Pose[i][1],
-                          para_Ex_Pose[i][2]);
-        rie[i] = Quaterniond(para_Ex_Pose[i][6],
-                             para_Ex_Pose[i][3],
-                             para_Ex_Pose[i][4],
-                             para_Ex_Pose[i][5]).toRotationMatrix();
-
         for (int j = 0; j <= WINDOW_SIZE; j++)
         {
-            tic[j] = tie[i] + Utility::Rodrigues(axis_ce[i], Encoder_angle[j][0]) * tec[i];
-            ric[j] = Utility::Rodrigues(axis_ce[i], Encoder_angle[j][0]) * rie[i];
+            tic[j] = Vector3d(para_Ex_Pose[j][0],
+                            para_Ex_Pose[j][1],
+                            para_Ex_Pose[j][2]);
+            ric[j] = Quaterniond(para_Ex_Pose[j][6],
+                                para_Ex_Pose[j][3],
+                                para_Ex_Pose[j][4],
+                                para_Ex_Pose[j][5]).toRotationMatrix();
         }
         
         // Eigen::Matrix3d R = Utility::Rodrigues(axis_ce[i], -(last_encoder_data - 2048) / 4096 * 2 * CV_PI);
         // ric[i] = R.transpose() * ric[i];
-        printf("para_Pose: ");
-        for(int i = 0; i < 7; i++)
-            printf("%.3f ", para_Pose[WINDOW_SIZE][i]);
+        // printf("para_Pose: ");
+        // for(int i = 0; i < 7; i++)
+        //     printf("%.3f ", para_Pose[WINDOW_SIZE][i]);
         // printf("tie: ");
         // for(int i = 0; i < 3; i++)
         //     printf("%.3f ", tie[0][i]);
@@ -801,14 +804,14 @@ void Estimator::optimization()
         ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
         problem.AddParameterBlock(para_Pose[i], SIZE_POSE, local_parameterization);
         problem.AddParameterBlock(para_SpeedBias[i], SIZE_SPEEDBIAS);
-        if (ENCODER_ENABLE)
-        {
-            problem.AddParameterBlock(para_angle[i], SIZE_ANGLE);
-            problem.SetParameterLowerBound(para_angle[i], 0, Encoder_angle_original[i] - 0.01);
-            problem.SetParameterUpperBound(para_angle[i], 0, Encoder_angle_original[i] + 0.01);
-        }
+        // if (ENCODER_ENABLE)
+        // {
+        //     problem.AddParameterBlock(para_angle[i], SIZE_ANGLE);
+        //     problem.SetParameterLowerBound(para_angle[i], 0, Encoder_angle_original[i] - 0.01);
+        //     problem.SetParameterUpperBound(para_angle[i], 0, Encoder_angle_original[i] + 0.01);
+        // }
     }
-    for (int i = 0; i < NUM_OF_CAM; i++)
+    for (int i = 0; i < WINDOW_SIZE + 1; i++)
     {
         ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
         problem.AddParameterBlock(para_Ex_Pose[i], SIZE_POSE, local_parameterization);
@@ -828,13 +831,13 @@ void Estimator::optimization()
             // ROS_DEBUG("estimate extinsic param");
         }
             
-        if (ENCODER_ENABLE && !ESTIMATE_AXIS)
-        {
-            // ROS_DEBUG("fix extinsic param");
-            // problem.SetParameterBlockConstant(para_ce_Axis[i]);
-            for (int j = 0; j < WINDOW_SIZE + 1; j++)
-                problem.SetParameterBlockConstant(para_angle[j]);
-        }
+        // if (ENCODER_ENABLE && !ESTIMATE_AXIS)
+        // {
+        //     // ROS_DEBUG("fix extinsic param");
+        //     // problem.SetParameterBlockConstant(para_ce_Axis[i]);
+        //     for (int j = 0; j < WINDOW_SIZE + 1; j++)
+        //         problem.SetParameterBlockConstant(para_angle[j]);
+        // }
     }
     if (ESTIMATE_TD)
     {
@@ -854,13 +857,13 @@ void Estimator::optimization()
 
     // cout << "last_marginalization_parameter_blocks size:" << last_marginalization_parameter_blocks.size() << endl;
     // cout << "last_marginalization_info:" << last_marginalization_info << endl;
-    if (last_marginalization_info)
-    {
-        // construct new marginlization_factor
-        MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
-        problem.AddResidualBlock(marginalization_factor, NULL,
-                                 last_marginalization_parameter_blocks);
-    }
+    // if (last_marginalization_info)
+    // {
+    //     // construct new marginlization_factor
+    //     MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
+    //     problem.AddResidualBlock(marginalization_factor, NULL,
+    //                              last_marginalization_parameter_blocks);
+    // }
     // cout << "successfly added" << endl;
 
     for (int i = 0; i < WINDOW_SIZE; i++)
@@ -914,8 +917,10 @@ void Estimator::optimization()
             {
                 if(ENCODER_ENABLE)
                 {
-                    ProjectionEncoderFactor *f_encoder = new ProjectionEncoderFactor(pts_i, pts_j);
-                    problem.AddResidualBlock(f_encoder, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0], para_Feature[feature_index], para_angle[imu_i], para_angle[imu_j]);
+                    ProjectionFactor *f = new ProjectionFactor(pts_i, pts_j);
+                    problem.AddResidualBlock(f, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[imu_i], para_Ex_Pose[imu_j], para_Feature[feature_index]);
+                    // ProjectionEncoderFactor *f_encoder = new ProjectionEncoderFactor(pts_i, pts_j);
+                    // problem.AddResidualBlock(f_encoder, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[imu_i], para_Ex_Pose[imu_j], para_Feature[feature_index]);
                 }
                 else
                 {
@@ -926,6 +931,23 @@ void Estimator::optimization()
             f_m_cnt++;
         }
     }
+    printf("\r\nric: ");
+    for (int i = 0; i < WINDOW_SIZE + 1; i++)
+    {
+        printf("%d: %.2f %.2f %.2f %.2f ", i, para_Ex_Pose[i][3], para_Ex_Pose[i][4], para_Ex_Pose[i][5], para_Ex_Pose[i][6]);
+    }
+    printf("\r\ntic: ");
+    for (int j = 0; j < WINDOW_SIZE + 1; j++)
+    {
+        printf("%d: %.3f %.3f %.3f ", j, tic[j].x(), tic[j].y(), tic[j].z());
+    }
+    printf("\r\n");
+    printf("\r\ntheta: ");
+    for (int j = 0; j < WINDOW_SIZE + 1; j++)
+    {
+        printf("%d: %.3f ", j, Encoder_angle[j][0]);
+    }
+    printf("\r\n");
 
     ROS_DEBUG("visual measurement count: %d", f_m_cnt);
     ROS_DEBUG("prepare for ceres: %f", t_prepare.toc());
@@ -957,8 +979,10 @@ void Estimator::optimization()
                     
                     if(ENCODER_ENABLE)
                     {
-                        ProjectionEncoderFactor *f_encoder = new ProjectionEncoderFactor(pts_i, pts_j);
-                        problem.AddResidualBlock(f_encoder, loss_function, para_Pose[start], relo_Pose, para_Ex_Pose[0], para_Feature[feature_index], para_angle[start], para_angle[relo_frame_local_index]);
+                        ProjectionFactor *f = new ProjectionFactor(pts_i, pts_j);
+                        problem.AddResidualBlock(f, loss_function, para_Pose[start], relo_Pose, para_Ex_Pose[start], para_Ex_Pose[relo_frame_local_index], para_Feature[feature_index]);
+                        // ProjectionEncoderFactor *f_encoder = new ProjectionEncoderFactor(pts_i, pts_j);
+                        // problem.AddResidualBlock(f_encoder, loss_function, para_Pose[start], relo_Pose, para_Ex_Pose[start], para_Ex_Pose[relo_frame_local_index], para_Feature[feature_index]);
                     }
                     else
                     {
@@ -1007,7 +1031,7 @@ void Estimator::optimization()
             {
                 if (last_marginalization_parameter_blocks[i] == para_Pose[0] ||
                     last_marginalization_parameter_blocks[i] == para_SpeedBias[0] ||
-                    last_marginalization_parameter_blocks[i] == para_angle[0])
+                    last_marginalization_parameter_blocks[i] == para_Ex_Pose[0])
                     drop_set.push_back(i);
                 // if (ENCODER_ENABLE)
                 //     if(last_marginalization_parameter_blocks[i] == para_angle[0])
@@ -1070,10 +1094,14 @@ void Estimator::optimization()
                     {
                         if(ENCODER_ENABLE)
                         {
-                            ProjectionEncoderFactor *f_encoder = new ProjectionEncoderFactor(pts_i, pts_j);
-                            ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(f_encoder, loss_function, 
-                                                                                        vector<double *>{para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0], para_Feature[feature_index], para_angle[imu_i], para_angle[imu_j]},
-                                                                                        vector<int>{0, 3, 4});
+                            ProjectionFactor *f = new ProjectionFactor(pts_i, pts_j);
+                            ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(f, loss_function,
+                                                                                        vector<double *>{para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[imu_i], para_Ex_Pose[imu_j], para_Feature[feature_index]},
+                                                                                        vector<int>{0, 2, 4});
+                            // ProjectionEncoderFactor *f_encoder = new ProjectionEncoderFactor(pts_i, pts_j);
+                            // ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(f_encoder, loss_function, 
+                            //                                                             vector<double *>{para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[imu_i], para_Ex_Pose[imu_j], para_Feature[feature_index]},
+                            //                                                             vector<int>{0, 2, 4});
                             marginalization_info->addResidualBlockInfo(residual_block_info);
                         }
                         else
@@ -1102,22 +1130,23 @@ void Estimator::optimization()
         {
             addr_shift[reinterpret_cast<long>(para_Pose[i])] = para_Pose[i - 1];
             addr_shift[reinterpret_cast<long>(para_SpeedBias[i])] = para_SpeedBias[i - 1];
-            if(ENCODER_ENABLE)
-                addr_shift[reinterpret_cast<long>(para_angle[i])] = para_angle[i - 1];
+            addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i - 1];
+            // if(ENCODER_ENABLE)
+            //     addr_shift[reinterpret_cast<long>(para_angle[i])] = para_angle[i - 1];
             // cout << i << " pose, speedpise, angle: " << para_Pose[i] << " " 
             // << para_SpeedBias[i] << " " << para_angle[i] << endl; 
         }
-        for (int i = 0; i < NUM_OF_CAM; i++)
-        {
-            addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i];
-            // if(ENCODER_ENABLE && ESTIMATE_AXIS)
-            // {
-            //     addr_shift[reinterpret_cast<long>(para_ce_Axis[i])] = para_ce_Axis[i];
-            //     addr_shift[reinterpret_cast<long>(para_ce_Position[i])] = para_ce_Position[i];
-            // }
-            // cout << i << " expose, axis, position: " << para_Ex_Pose[i] << " " 
-            // << para_ce_Axis[i] << " " << para_ce_Position[i] << endl; 
-        }
+        // for (int i = 0; i < NUM_OF_CAM; i++)
+        // {
+        //     addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i];
+        //     // if(ENCODER_ENABLE && ESTIMATE_AXIS)
+        //     // {
+        //     //     addr_shift[reinterpret_cast<long>(para_ce_Axis[i])] = para_ce_Axis[i];
+        //     //     addr_shift[reinterpret_cast<long>(para_ce_Position[i])] = para_ce_Position[i];
+        //     // }
+        //     // cout << i << " expose, axis, position: " << para_Ex_Pose[i] << " " 
+        //     // << para_ce_Axis[i] << " " << para_ce_Position[i] << endl; 
+        // }
         if (ESTIMATE_TD)
         {
             addr_shift[reinterpret_cast<long>(para_Td[0])] = para_Td[0];
@@ -1146,7 +1175,7 @@ void Estimator::optimization()
                 {
                     ROS_ASSERT(last_marginalization_parameter_blocks[i] != para_SpeedBias[WINDOW_SIZE - 1]);
                     if (last_marginalization_parameter_blocks[i] == para_Pose[WINDOW_SIZE - 1] || 
-                    last_marginalization_parameter_blocks[i] == para_angle[WINDOW_SIZE - 1])
+                    last_marginalization_parameter_blocks[i] == para_Ex_Pose[WINDOW_SIZE - 1])
                         drop_set.push_back(i);
                 }
                 // construct new marginlization_factor
@@ -1177,28 +1206,30 @@ void Estimator::optimization()
                 {
                     addr_shift[reinterpret_cast<long>(para_Pose[i])] = para_Pose[i - 1];
                     addr_shift[reinterpret_cast<long>(para_SpeedBias[i])] = para_SpeedBias[i - 1];
-                    if(ENCODER_ENABLE)
-                        addr_shift[reinterpret_cast<long>(para_angle[i])] = para_angle[i - 1];
+                    addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i - 1];
+                    // if(ENCODER_ENABLE)
+                    //     addr_shift[reinterpret_cast<long>(para_angle[i])] = para_angle[i - 1];
                 }
                 else
                 {
                     addr_shift[reinterpret_cast<long>(para_Pose[i])] = para_Pose[i];
                     addr_shift[reinterpret_cast<long>(para_SpeedBias[i])] = para_SpeedBias[i];
-                    if(ENCODER_ENABLE)
-                        addr_shift[reinterpret_cast<long>(para_angle[i])] = para_angle[i];
+                    addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i];
+                    // if(ENCODER_ENABLE)
+                    //     addr_shift[reinterpret_cast<long>(para_angle[i])] = para_angle[i];
                 }
                 // cout << i << " pose, speedpise, angle: " << para_Pose[i] << " " 
                 // << para_SpeedBias[i] << " " << para_angle[i] << endl; 
             }
-            for (int i = 0; i < NUM_OF_CAM; i++)
-            {
-                addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i];
-                // if(ENCODER_ENABLE && ESTIMATE_AXIS)
-                // {
-                //     addr_shift[reinterpret_cast<long>(para_ce_Axis[i])] = para_ce_Axis[i];
-                //     addr_shift[reinterpret_cast<long>(para_ce_Position[i])] = para_ce_Position[i];
-                // }
-            }
+            // for (int i = 0; i < NUM_OF_CAM; i++)
+            // {
+            //     addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i];
+            //     // if(ENCODER_ENABLE && ESTIMATE_AXIS)
+            //     // {
+            //     //     addr_shift[reinterpret_cast<long>(para_ce_Axis[i])] = para_ce_Axis[i];
+            //     //     addr_shift[reinterpret_cast<long>(para_ce_Position[i])] = para_ce_Position[i];
+            //     // }
+            // }
             if (ESTIMATE_TD)
             {
                 addr_shift[reinterpret_cast<long>(para_Td[0])] = para_Td[0];
