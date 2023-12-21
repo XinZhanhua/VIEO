@@ -188,12 +188,15 @@ void encoder_callback(const std_msgs::Header::ConstPtr& msg)
     double process_noise = 0.01;  // Process noise
     KalmanFilter kf(process_noise);
     kf.update(dt, estimator.encoder_angle, estimator.encoder_angle_velocity);
-    double filtered_angle = kf.getAngle();
-    double filtered_angular_velocity = kf.getAngularVelocity();
-    filtered_angular_velocity = estimator.encoder_angle_velocity;
+    estimator.filtered_angle = kf.getAngle();
+    estimator.filtered_angular_velocity = kf.getAngularVelocity();
+    estimator.filtered_angular_velocity = estimator.encoder_angle_velocity;
+    double filter_K = 0.2;
+    estimator.filtered_angle = (1 - filter_K) * estimator.last_filtered_angle + filter_K * estimator.encoder_angle;
 
     estimator.last_encoder_angle_velocity = estimator.encoder_angle_velocity;
     estimator.last_continuous_encoder_data = estimator.continuous_encoder_data;
+    estimator.last_filtered_angle = estimator.filtered_angle;
     last_encoder_t = encoder_t;
 
     // write result to file
@@ -206,8 +209,8 @@ void encoder_callback(const std_msgs::Header::ConstPtr& msg)
             << estimator.encoder_angle << ","
             << estimator.encoder_angle_velocity << ","
             << estimator.continuous_encoder_data << ","
-            << filtered_angle << ","
-            << filtered_angular_velocity << "," << endl;
+            << estimator.filtered_angle << ","
+            << estimator.filtered_angular_velocity << "," << endl;
     foutC.close();
 }
 

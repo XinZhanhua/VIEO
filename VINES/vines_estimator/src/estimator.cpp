@@ -146,7 +146,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
     // continuous_encoder_data = 0.5 * (rot_times * 4096 + encoder_data) + 0.5 * last_continuous_encoder_data;
     // ROS_INFO("encoder_data: %d, continuous_encoder_data: %d, %d", encoder_data, continuous_encoder_data, rot_times);
         
-    Encoder_angle[frame_count][0] = encoder_angle;
+    Encoder_angle[frame_count][0] = filtered_angle;
     Encoder_angle_original[frame_count] = encoder_angle;
     
     last_encoder_data = encoder_data;
@@ -154,8 +154,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
 
     tic[frame_count] = tie[0] + Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * tec[0];
     ric[frame_count] = Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * rie[0];
-
-    // last_continuous_encoder_data = continuous_encoder_data;
+    // last_conframe_counttinuous_encoder_data = continuous_encoder_data;
     // if(encoder_data < 2048)
     //     Encoder_angle[frame_count][0] = -(double)encoder_data / 4096 * 2 * CV_PI;
     // else
@@ -582,6 +581,7 @@ void Estimator::vector2double()
             para_Ex_Pose[j][1] = tic[j].y();
             para_Ex_Pose[j][2] = tic[j].z();
             Quaterniond q{ric[j]};
+            q.normalize();
             para_Ex_Pose[j][3] = q.x();
             para_Ex_Pose[j][4] = q.y();
             para_Ex_Pose[j][5] = q.z();
@@ -678,10 +678,11 @@ void Estimator::double2vector()
             tic[j] = Vector3d(para_Ex_Pose[j][0],
                             para_Ex_Pose[j][1],
                             para_Ex_Pose[j][2]);
-            ric[j] = Quaterniond(para_Ex_Pose[j][6],
+            Quaterniond temp_q(para_Ex_Pose[j][6],
                                 para_Ex_Pose[j][3],
                                 para_Ex_Pose[j][4],
-                                para_Ex_Pose[j][5]).toRotationMatrix();
+                                para_Ex_Pose[j][5]);
+            ric[j] = temp_q.normalized().toRotationMatrix();
         }
         
         // Eigen::Matrix3d R = Utility::Rodrigues(axis_ce[i], -(last_encoder_data - 2048) / 4096 * 2 * CV_PI);
@@ -695,7 +696,6 @@ void Estimator::double2vector()
         // printf("angle: ");
         // for(int i = 0; i < 1; i++)
         //     printf("%.3f ", -(double)(encoder_data + 1) / 4096 * 2 * CV_PI);
-        printf("\r\n"); 
         if(ENCODER_ENABLE)
         {
             // Eigen::Matrix4d pose = Eigen::Matrix4d::Identity();
@@ -847,23 +847,15 @@ void Estimator::optimization()
 
     TicToc t_whole, t_prepare;
     vector2double();
-
-    // if(last_marginalization_parameter_blocks.size())
-    //     for(const auto& ptr : last_marginalization_parameter_blocks)
-    //         cout << ptr << " ";
-    // else
-    //     cout << "size = 0";
-    // cout << endl;
-
     // cout << "last_marginalization_parameter_blocks size:" << last_marginalization_parameter_blocks.size() << endl;
     // cout << "last_marginalization_info:" << last_marginalization_info << endl;
-    // if (last_marginalization_info)
-    // {
-    //     // construct new marginlization_factor
-    //     MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
-    //     problem.AddResidualBlock(marginalization_factor, NULL,
-    //                              last_marginalization_parameter_blocks);
-    // }
+    if (last_marginalization_info)
+    {
+        // construct new marginlization_factor
+        MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
+        problem.AddResidualBlock(marginalization_factor, NULL,
+                                 last_marginalization_parameter_blocks);
+    }
     // cout << "successfly added" << endl;
 
     for (int i = 0; i < WINDOW_SIZE; i++)
@@ -931,23 +923,6 @@ void Estimator::optimization()
             f_m_cnt++;
         }
     }
-    printf("\r\nric: ");
-    for (int i = 0; i < WINDOW_SIZE + 1; i++)
-    {
-        printf("%d: %.2f %.2f %.2f %.2f ", i, para_Ex_Pose[i][3], para_Ex_Pose[i][4], para_Ex_Pose[i][5], para_Ex_Pose[i][6]);
-    }
-    printf("\r\ntic: ");
-    for (int j = 0; j < WINDOW_SIZE + 1; j++)
-    {
-        printf("%d: %.3f %.3f %.3f ", j, tic[j].x(), tic[j].y(), tic[j].z());
-    }
-    printf("\r\n");
-    printf("\r\ntheta: ");
-    for (int j = 0; j < WINDOW_SIZE + 1; j++)
-    {
-        printf("%d: %.3f ", j, Encoder_angle[j][0]);
-    }
-    printf("\r\n");
 
     ROS_DEBUG("visual measurement count: %d", f_m_cnt);
     ROS_DEBUG("prepare for ceres: %f", t_prepare.toc());
@@ -1015,8 +990,33 @@ void Estimator::optimization()
     cout << summary.BriefReport() << endl;
     ROS_DEBUG("Iterations : %d", static_cast<int>(summary.iterations.size()));
     ROS_DEBUG("solver costs: %f", t_solver.toc());
-
+    
+    // printf("\r\n");
+    // printf("\r\nqic1: ");
+    // for (int i = 0; i < WINDOW_SIZE + 1; i++)
+    // {
+    //     Quaterniond q{ric[i]};
+    //     printf("%d: %.4f %.4f %.4f %.4f ", i, q.x(), q.y(), q.z(), q.w());
+    // }
+    // printf("\r\nExP2: ");
+    // for (int i = 0; i < WINDOW_SIZE + 1; i++)
+    // {
+    //     printf("%d: %.4f %.4f %.4f %.4f ", i, para_Ex_Pose[i][3], para_Ex_Pose[i][4], para_Ex_Pose[i][5], para_Ex_Pose[i][6]);
+    // }
     double2vector();
+    // printf("\r\nqic2: ");
+    // for (int i = 0; i < WINDOW_SIZE + 1; i++)
+    // {
+    //     Quaterniond q{ric[i]};
+    //     printf("%d: %.4f %.4f %.4f %.4f ", i, q.x(), q.y(), q.z(), q.w());
+    // }
+    // printf("\r\nmarginalization_flag=%s, frame_count=%d", marginalization_flag == MARGIN_OLD ? "MARGIN_OLD" : "MARGIN_SECOND_NEW", frame_count);
+    // printf("\r\ntheta: ");
+    // for (int i = 0; i < WINDOW_SIZE + 1; i++)
+    // {
+    //     printf("%d: %.4f ", i, Encoder_angle[i][0]);
+    // }
+    printf("\r\n");
 
     TicToc t_whole_marginalization;
     if (marginalization_flag == MARGIN_OLD)

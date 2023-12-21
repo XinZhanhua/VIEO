@@ -80,7 +80,7 @@ class Estimator
     Vector3d axis_ce[NUM_OF_CAM];
 
     int encoder_data, last_encoder_data, continuous_encoder_data, rot_times, last_continuous_encoder_data;
-    double encoder_angle, encoder_angle_velocity_original, encoder_angle_velocity, last_encoder_angle_velocity, last_time;
+    double encoder_angle, encoder_angle_velocity_original, encoder_angle_velocity, last_encoder_angle_velocity, last_time, filtered_angle, filtered_angular_velocity, last_filtered_angle;
 
     Vector3d Ps[(WINDOW_SIZE + 1)];
     Vector3d Vs[(WINDOW_SIZE + 1)];
