@@ -825,6 +825,12 @@ void Estimator::optimization()
         {
             // ROS_DEBUG("fix extinsic param");
             problem.SetParameterBlockConstant(para_Ex_Pose[i]);
+            // for (int j = 0; j < 7; j++)
+            // {
+            //     problem.SetParameterLowerBound(para_Ex_Pose[i], j, para_Ex_Pose[i][j] - 0.01);
+            //     problem.SetParameterUpperBound(para_Ex_Pose[i], j, para_Ex_Pose[i][j] + 0.01);
+            // }
+            
         }
         else
         {
