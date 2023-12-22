@@ -66,7 +66,7 @@ void readParameters(ros::NodeHandle &n)
     std::string OUTPUT_PATH;
     fsSettings["output_path"] >> OUTPUT_PATH;
     ANGLE_OUTPUT_PATH = OUTPUT_PATH + "/angle.csv";
-    VINS_RESULT_PATH = OUTPUT_PATH + "/vines_result_no_loop.csv";
+    VINS_RESULT_PATH = OUTPUT_PATH + "/vines_result_no_loop_bug.csv";
     std::cout << "result path " << VINS_RESULT_PATH << std::endl;
 
     // create folder if not exists

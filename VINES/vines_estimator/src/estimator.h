@@ -13,6 +13,7 @@
 
 #include <ceres/ceres.h>
 #include "factor/imu_factor.h"
+#include "factor/encoder_factor.h"
 #include "factor/pose_local_parameterization.h"
 #include "factor/axis_local_paramenterization.h"
 #include "factor/projection_factor.h"

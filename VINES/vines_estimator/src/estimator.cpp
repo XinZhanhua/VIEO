@@ -146,7 +146,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
     // continuous_encoder_data = 0.5 * (rot_times * 4096 + encoder_data) + 0.5 * last_continuous_encoder_data;
     // ROS_INFO("encoder_data: %d, continuous_encoder_data: %d, %d", encoder_data, continuous_encoder_data, rot_times);
         
-    Encoder_angle[frame_count][0] = filtered_angle;
+    Encoder_angle[frame_count][0] = encoder_angle;
     Encoder_angle_original[frame_count] = encoder_angle;
     
     last_encoder_data = encoder_data;
@@ -866,6 +866,14 @@ void Estimator::optimization()
         IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
         problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
     }
+
+    // for (int i = 0; i < WINDOW_SIZE; i++)
+    // {
+    //     int j = i + 1;
+    //     EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[i][0], Encoder_angle[j][0]);
+    //     problem.AddResidualBlock(encoder_factor, NULL, para_Ex_Pose[i], para_Ex_Pose[j]);
+    // }
+    
     int f_m_cnt = 0;
     int feature_index = -1;
 
@@ -990,7 +998,7 @@ void Estimator::optimization()
     cout << summary.BriefReport() << endl;
     ROS_DEBUG("Iterations : %d", static_cast<int>(summary.iterations.size()));
     ROS_DEBUG("solver costs: %f", t_solver.toc());
-    
+
     // printf("\r\n");
     // printf("\r\nqic1: ");
     // for (int i = 0; i < WINDOW_SIZE + 1; i++)
@@ -1056,6 +1064,14 @@ void Estimator::optimization()
                 marginalization_info->addResidualBlockInfo(residual_block_info);
             }
         }
+
+        // {
+        //     EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[0][0], Encoder_angle[1][0]);
+        //     ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(encoder_factor, NULL,
+        //                                                     vector<double *>{para_Ex_Pose[0], para_Ex_Pose[1]},
+        //                                                     vector<int>{0});
+        //     marginalization_info->addResidualBlockInfo(residual_block_info);
+        // }
 
         {
             int feature_index = -1;
