@@ -25,8 +25,8 @@ projection_parameters:
 # 是否使用编码器
 encoder_enable: 1
 
-# 是否优化转轴
-estimate_axis: 0
+# 是否使用新数据集
+new_dataset: 1
 
 axis: !!opencv-matrix
    rows: 3

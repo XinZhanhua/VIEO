@@ -683,12 +683,12 @@ void Estimator::double2vector()
         
         // Eigen::Matrix3d R = Utility::Rodrigues(axis_ce[i], -(last_encoder_data - 2048) / 4096 * 2 * CV_PI);
         // ric[i] = R.transpose() * ric[i];
-        printf("para_Pose: ");
-        for(int i = 0; i < 7; i++)
-            printf("%.3f ", para_Pose[WINDOW_SIZE][i]);
-        // printf("tie: ");
+        // printf("para_Pose: ");
+        // for(int i = 0; i < 7; i++)
+        //     printf("%.3f ", para_Pose[WINDOW_SIZE][i]);
+        // printf("tic: ");
         // for(int i = 0; i < 3; i++)
-        //     printf("%.3f ", tie[0][i]);
+        //     printf("%.3f ", tic[i][0]);
         // printf("angle: ");
         // for(int i = 0; i < 1; i++)
         //     printf("%.3f ", -(double)(encoder_data + 1) / 4096 * 2 * CV_PI);
@@ -812,12 +812,6 @@ void Estimator::optimization()
     {
         ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
         problem.AddParameterBlock(para_Ex_Pose[i], SIZE_POSE, local_parameterization);
-        if (ENCODER_ENABLE && ESTIMATE_AXIS)
-        {
-            // ceres::LocalParameterization *local_parameterization = new AxisLocalParameterization();
-            // problem.AddParameterBlock(para_ce_Axis[i], SIZE_AXIS, local_parameterization);
-            // problem.AddParameterBlock(para_ce_Position[i], SIZE_POSITION);
-        }
         if (!ESTIMATE_EXTRINSIC)
         {
             // ROS_DEBUG("fix extinsic param");
@@ -828,7 +822,7 @@ void Estimator::optimization()
             // ROS_DEBUG("estimate extinsic param");
         }
             
-        if (ENCODER_ENABLE && !ESTIMATE_AXIS)
+        if (ENCODER_ENABLE)
         {
             // ROS_DEBUG("fix extinsic param");
             // problem.SetParameterBlockConstant(para_ce_Axis[i]);
@@ -871,6 +865,12 @@ void Estimator::optimization()
         IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
         problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
     }
+    // for (int i = 0; i < WINDOW_SIZE; i++)
+    // {
+    //     int j = i + 1;
+    //     EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[i][0], Encoder_angle[j][0]);
+    //     problem.AddResidualBlock(encoder_factor, NULL, para_Ex_Pose[i], para_Ex_Pose[j]);
+    // }
     int f_m_cnt = 0;
     int feature_index = -1;
 
@@ -988,11 +988,17 @@ void Estimator::optimization()
     TicToc t_solver;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
-    cout << summary.BriefReport() << endl;
+    // cout << summary.BriefReport() << endl;
     ROS_DEBUG("Iterations : %d", static_cast<int>(summary.iterations.size()));
     ROS_DEBUG("solver costs: %f", t_solver.toc());
 
     double2vector();
+    printf("encoder data: %d ", encoder_data);
+    for(int i = 0; i < WINDOW_SIZE + 1; i++)
+    {
+        printf("%d: %.3f %.3f %.3f  ", i, tic[i][0], tic[i][1], tic[i][2]);
+    }
+    printf("\r\n");
 
     TicToc t_whole_marginalization;
     if (marginalization_flag == MARGIN_OLD)
@@ -1033,6 +1039,14 @@ void Estimator::optimization()
             }
         }
 
+        // {
+        //     EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[0][0], Encoder_angle[1][0]);
+        //     ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(encoder_factor, NULL,
+        //                                                     vector<double *>{para_Ex_Pose[0], para_Ex_Pose[1]},
+        //                                                     vector<int>{0});
+        //     marginalization_info->addResidualBlockInfo(residual_block_info);
+        // }
+        
         {
             int feature_index = -1;
             for (auto &it_per_id : f_manager.feature)
@@ -1110,7 +1124,7 @@ void Estimator::optimization()
         for (int i = 0; i < NUM_OF_CAM; i++)
         {
             addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i];
-            // if(ENCODER_ENABLE && ESTIMATE_AXIS)
+            // if(ENCODER_ENABLE && NEW_DATASET)
             // {
             //     addr_shift[reinterpret_cast<long>(para_ce_Axis[i])] = para_ce_Axis[i];
             //     addr_shift[reinterpret_cast<long>(para_ce_Position[i])] = para_ce_Position[i];
@@ -1193,7 +1207,7 @@ void Estimator::optimization()
             for (int i = 0; i < NUM_OF_CAM; i++)
             {
                 addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i];
-                // if(ENCODER_ENABLE && ESTIMATE_AXIS)
+                // if(ENCODER_ENABLE && NEW_DATASET)
                 // {
                 //     addr_shift[reinterpret_cast<long>(para_ce_Axis[i])] = para_ce_Axis[i];
                 //     addr_shift[reinterpret_cast<long>(para_ce_Position[i])] = para_ce_Position[i];
