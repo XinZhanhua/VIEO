@@ -169,22 +169,22 @@ void pubOdometry(const Estimator &estimator, const std_msgs::Header &header)
               << estimator.Vs[WINDOW_SIZE].x() << ","
               << estimator.Vs[WINDOW_SIZE].y() << ","
               << estimator.Vs[WINDOW_SIZE].z() << ","
-              << estimator.Encoder_angle[WINDOW_SIZE][0] << "," << ",";
-        for (int i = 0; i < WINDOW_SIZE; i++)
-        {
-            foutC << estimator.tic[i].x() << ","
-                  << estimator.tic[i].y() << ","
-                  << estimator.tic[i].z() << ",";
-        }
-        foutC << ",";
-        for (int i = 0; i < WINDOW_SIZE; i++)
-        {
-            Quaterniond q{estimator.ric[i]};
-            foutC << q.w() << ","
-                  << q.x() << ","
-                  << q.y() << ","
-                  << q.z() << ",";
-        }
+              << estimator.Encoder_angle[WINDOW_SIZE][0] << ",";
+        // for (int i = 0; i < WINDOW_SIZE; i++)
+        // {
+        //     foutC << estimator.tic[i].x() << ","
+        //           << estimator.tic[i].y() << ","
+        //           << estimator.tic[i].z() << ",";
+        // }
+        // foutC << ",";
+        // for (int i = 0; i < WINDOW_SIZE; i++)
+        // {
+        //     Quaterniond q{estimator.ric[i]};
+        //     foutC << q.w() << ","
+        //           << q.x() << ","
+        //           << q.y() << ","
+        //           << q.z() << ",";
+        // }
             
         foutC << endl;
         foutC.close();

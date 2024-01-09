@@ -23,7 +23,7 @@ projection_parameters:
    cy: 2.294e+02
 
 # 是否使用编码器
-encoder_enable: 1
+encoder_enable: 0
 
 # 是否使用新数据集
 new_dataset: 1
@@ -35,7 +35,7 @@ axis: !!opencv-matrix
    data: [0.00177999, -0.0098217, 0.99995]
 
 # Extrinsic parameter between IMU and Camera.
-estimate_extrinsic: 1   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
+estimate_extrinsic: 0   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
                         # 1  Have an initial guess about extrinsic parameters. We will optimize around your initial guess.
                         # 2  Don't know anything about extrinsic parameters. You don't need to give R,T. We will try to calibrate it. Do some rotation movement at beginning.                        
 #If you choose 0 or 1, you should write down the following matrix. Rotation from camera frame to imu frame, imu^R_cam
@@ -61,12 +61,12 @@ extrinsicTranslation: !!opencv-matrix
    rows: 3
    cols: 1
    dt: d
-   data: [0.0431247, 0.00903383, -0.0100873]
+   data: [0.0483362, 0.0303988, 0.0153621]
 T_ec: !!opencv-matrix
    rows: 3
    cols: 1
    dt: d
-   data: [0.0211704, -0.00364647, -0.00988826]
+   data: [0.0270792, -0.00015718, 0.0148396]
 
 #feature traker paprameters
 max_cnt: 150            # max feature number in feature tracking
@@ -90,7 +90,7 @@ gyr_w: 2.6645e-4       # gyroscope bias random work noise standard deviation.   
 g_norm: 9.80654        # gravity magnitude
 
 #loop closure parameters
-loop_closure: 0                    # start loop closure
+loop_closure: 1                    # start loop closure
 load_previous_pose_graph: 0        # load and reuse previous pose graph; load from 'pose_graph_save_path'
 fast_relocalization: 0             # useful in real-time and large project
 pose_graph_save_path: "/home/huarsuma/result/vines_result/pose_graph/" # save and load path

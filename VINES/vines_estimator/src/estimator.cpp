@@ -994,9 +994,9 @@ void Estimator::optimization()
 
     double2vector();
     printf("encoder data: %d ", encoder_data);
-    for(int i = 0; i < WINDOW_SIZE + 1; i++)
+    for(int i = 0; i < 0 + 1; i++)
     {
-        printf("%d: %.3f %.3f %.3f  ", i, tic[i][0], tic[i][1], tic[i][2]);
+        printf("%d: %.3f %.3f %.3f  ", i, tie[i][0], tie[i][1], tie[i][2]);
     }
     printf("\r\n");
 
