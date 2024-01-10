@@ -18,3 +18,4 @@ roslaunch lego_loam run.launch
 
 ~/vines_ws/src/VINES/config/gimbal/command_vins.sh
 ~/vines_ws/src/VINES/config/gimbal/command_vines.sh
+~/vines_ws/src/VINES/config/gimbal/command_legoloam.sh
