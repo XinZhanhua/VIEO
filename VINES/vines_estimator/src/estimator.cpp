@@ -874,7 +874,7 @@ void Estimator::optimization()
     {
         int j = i + 1;
         // printf("%f, %f %f %f,  \r\n", Encoder_angle[i][0], tic[i][0], tic[i][1], tic[i][2]);
-        EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[i][0], Encoder_angle[j][0], tic[i], tic[j], ric[i], ric[j]);
+        EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[i][0], Encoder_angle[j][0]);
         problem.AddResidualBlock(encoder_factor, NULL, para_Ex_Pose[i], para_Ex_Pose[j]);
     }
     int f_m_cnt = 0;
@@ -1046,13 +1046,13 @@ void Estimator::optimization()
             }
         }
 
-        // {
-        //     EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[0][0], Encoder_angle[1][0], tic[0], tic[1], ric[0], ric[1]);
-        //     ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(encoder_factor, NULL,
-        //                                                     vector<double *>{para_Ex_Pose[0], para_Ex_Pose[1]},
-        //                                                     vector<int>{0});
-        //     marginalization_info->addResidualBlockInfo(residual_block_info);
-        // }
+        {
+            EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[0][0], Encoder_angle[1][0]);
+            ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(encoder_factor, NULL,
+                                                            vector<double *>{para_Ex_Pose[0], para_Ex_Pose[1]},
+                                                            vector<int>{0});
+            marginalization_info->addResidualBlockInfo(residual_block_info);
+        }
         
         {
             int feature_index = -1;
