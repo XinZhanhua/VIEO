@@ -20,6 +20,7 @@ class EncoderFactor : public ceres::SizedCostFunction<3, 7, 7>
     }
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const
     {
+        printf("helloworld \r\n");
         Eigen::Vector3d tie_i(parameters[0][0], parameters[0][1], parameters[0][2]);
         Eigen::Quaterniond qie_i(parameters[0][6], parameters[0][3], parameters[0][4], parameters[0][5]);
 
@@ -109,6 +110,8 @@ class EncoderFactor : public ceres::SizedCostFunction<3, 7, 7>
             //     jacobian_ex_pose_j.block<3, 3>(3, 3) = (Utility::Qleft(derta_q * qic_i) * Utility::Qright(qic_j)).bottomRightCorner<3, 3>();
             // }
         }
+
+        printf("helloworld \r\n");
     }
     double angle_i, angle_j;
 };

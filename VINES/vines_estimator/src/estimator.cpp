@@ -870,13 +870,13 @@ void Estimator::optimization()
         IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
         problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
     }
-    for (int i = 0; i < WINDOW_SIZE; i++)
-    {
-        int j = i + 1;
-        // printf("%f, %f %f %f,  \r\n", Encoder_angle[i][0], tic[i][0], tic[i][1], tic[i][2]);
-        EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[i][0], Encoder_angle[j][0]);
-        problem.AddResidualBlock(encoder_factor, NULL, para_Ex_Pose[i], para_Ex_Pose[j]);
-    }
+    // for (int i = 0; i < WINDOW_SIZE; i++)
+    // {
+    //     int j = i + 1;
+    //     // printf("%f, %f %f %f,  \r\n", Encoder_angle[i][0], tic[i][0], tic[i][1], tic[i][2]);
+    //     EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[i][0], Encoder_angle[j][0]);
+    //     problem.AddResidualBlock(encoder_factor, NULL, para_Ex_Pose[i], para_Ex_Pose[j]);
+    // }
     int f_m_cnt = 0;
     int feature_index = -1;
 
@@ -1046,13 +1046,13 @@ void Estimator::optimization()
             }
         }
 
-        {
-            EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[0][0], Encoder_angle[1][0]);
-            ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(encoder_factor, NULL,
-                                                            vector<double *>{para_Ex_Pose[0], para_Ex_Pose[1]},
-                                                            vector<int>{0});
-            marginalization_info->addResidualBlockInfo(residual_block_info);
-        }
+        // {
+        //     EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[0][0], Encoder_angle[1][0]);
+        //     ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(encoder_factor, NULL,
+        //                                                     vector<double *>{para_Ex_Pose[0], para_Ex_Pose[1]},
+        //                                                     vector<int>{0});
+        //     marginalization_info->addResidualBlockInfo(residual_block_info);
+        // }
         
         {
             int feature_index = -1;
