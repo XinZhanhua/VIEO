@@ -152,8 +152,9 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
     last_encoder_data = encoder_data;
     last_time = header.stamp.toSec();
 
-    tic[frame_count] = tie[0] + Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * tec[0];
-    ric[frame_count] = Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * rie[0];
+    // tic[frame_count] = tie[0] + Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * tec[0];
+    // ric[frame_count] = Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * rie[0];
+
     // last_conframe_counttinuous_encoder_data = continuous_encoder_data;
     // if(encoder_data < 2048)
     //     Encoder_angle[frame_count][0] = -(double)encoder_data / 4096 * 2 * CV_PI;
@@ -597,6 +598,11 @@ void Estimator::vector2double()
     }
     // cout << "encoder_angle_velocity" << encoder_angle_velocity << endl;
     // ProjectionEncoderFactor::sqrt_info = FOCAL_LENGTH / 1.5 / (1 + 5 * fabs(encoder_angle_velocity)) * Matrix2d::Identity();
+    for (int j = 0; j <= WINDOW_SIZE; j++)
+    {
+        tic[j] = tie[0] + Utility::Rodrigues(axis_ce[0], Encoder_angle[j][0]) * tec[0];
+        ric[j] = Utility::Rodrigues(axis_ce[0], Encoder_angle[j][0]) * rie[0];
+    }
 
     // cout << "axis_ce: " << axis_ce[0] << endl;
     // cout << "Encoder_angle" << Encoder_angle[0] << endl;
@@ -815,12 +821,12 @@ void Estimator::optimization()
     {
         ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
         problem.AddParameterBlock(para_Ex_Pose[i], SIZE_POSE, local_parameterization);
-        if (ENCODER_ENABLE && ESTIMATE_AXIS)
-        {
-            // ceres::LocalParameterization *local_parameterization = new AxisLocalParameterization();
-            // problem.AddParameterBlock(para_ce_Axis[i], SIZE_AXIS, local_parameterization);
-            // problem.AddParameterBlock(para_ce_Position[i], SIZE_POSITION);
-        }
+        // if (ENCODER_ENABLE && ESTIMATE_AXIS)
+        // {
+        //     // ceres::LocalParameterization *local_parameterization = new AxisLocalParameterization();
+        //     // problem.AddParameterBlock(para_ce_Axis[i], SIZE_AXIS, local_parameterization);
+        //     // problem.AddParameterBlock(para_ce_Position[i], SIZE_POSITION);
+        // }
         if (!ESTIMATE_EXTRINSIC)
         {
             // ROS_DEBUG("fix extinsic param");
@@ -873,12 +879,15 @@ void Estimator::optimization()
         problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
     }
 
-    // for (int i = 0; i < WINDOW_SIZE; i++)
-    // {
-    //     int j = i + 1;
+    for (int i = 0; i <= WINDOW_SIZE; i++)
+    {
+        int j = i + 1;
     //     EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[i][0], Encoder_angle[j][0]);
     //     problem.AddResidualBlock(encoder_factor, NULL, para_Ex_Pose[i], para_Ex_Pose[j]);
-    // }
+        ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor, 1, 7>(new EncoderCostFunctor(Encoder_angle[i][0]));
+        problem.AddResidualBlock(encoder_cost_function, NULL, para_Ex_Pose[i]);
+    }
+    
     
     int f_m_cnt = 0;
     int feature_index = -1;
@@ -1002,6 +1011,7 @@ void Estimator::optimization()
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     cout << summary.BriefReport() << endl;
+    // cout << summary.FullReport() << endl;
     ROS_DEBUG("Iterations : %d", static_cast<int>(summary.iterations.size()));
     ROS_DEBUG("solver costs: %f", t_solver.toc());
 
@@ -1012,6 +1022,8 @@ void Estimator::optimization()
     //     Quaterniond q{ric[i]};
     //     printf("%d: %.4f %.4f %.4f %.4f ", i, q.x(), q.y(), q.z(), q.w());
     // }
+    printf("\r\ntic: ");
+    printf("\r\ntic: %.4f %.4f %.4f    Ps: %.4f %.4f %.4f\r\n", tic[0].x(), tic[0].y(), tic[0].z(), Ps[0].x(), Ps[0].y(), Ps[0].z());
     // printf("\r\nExP2: ");
     // for (int i = 0; i < WINDOW_SIZE + 1; i++)
     // {
@@ -1071,13 +1083,18 @@ void Estimator::optimization()
             }
         }
 
-        // {
-        //     EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[0][0], Encoder_angle[1][0]);
-        //     ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(encoder_factor, NULL,
-        //                                                     vector<double *>{para_Ex_Pose[0], para_Ex_Pose[1]},
-        //                                                     vector<int>{0});
-        //     marginalization_info->addResidualBlockInfo(residual_block_info);
-        // }
+        {
+            ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor, 1, 7>(new EncoderCostFunctor(Encoder_angle[0][0]));
+            ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(encoder_cost_function, NULL,
+                                                            vector<double *>{para_Ex_Pose[0]},
+                                                            vector<int>{0});
+
+            // EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[0][0], Encoder_angle[1][0]);
+            // ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(encoder_factor, NULL,
+            //                                                 vector<double *>{para_Ex_Pose[0], para_Ex_Pose[1]},
+            //                                                 vector<int>{0});
+            marginalization_info->addResidualBlockInfo(residual_block_info);
+        }
 
         {
             int feature_index = -1;

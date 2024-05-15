@@ -18,7 +18,7 @@ double SOLVER_TIME;
 int NUM_ITERATIONS;
 int ENCODER_ENABLE;
 int ESTIMATE_EXTRINSIC;
-int ESTIMATE_AXIS;
+int NEW_DATASET;
 int ESTIMATE_TD;
 int ROLLING_SHUTTER;
 std::string EX_CALIB_RESULT_PATH;
@@ -66,7 +66,7 @@ void readParameters(ros::NodeHandle &n)
     std::string OUTPUT_PATH;
     fsSettings["output_path"] >> OUTPUT_PATH;
     ANGLE_OUTPUT_PATH = OUTPUT_PATH + "/angle.csv";
-    VINS_RESULT_PATH = OUTPUT_PATH + "/vines_result_no_loop_bug.csv";
+    VINS_RESULT_PATH = OUTPUT_PATH + "/vines_result_no_loop.csv";
     std::cout << "result path " << VINS_RESULT_PATH << std::endl;
 
     // create folder if not exists
@@ -85,7 +85,7 @@ void readParameters(ros::NodeHandle &n)
     ROS_INFO("ROW: %f COL: %f ", ROW, COL);
 
     ENCODER_ENABLE = fsSettings["encoder_enable"];
-    ESTIMATE_AXIS = fsSettings["estimate_axis"];
+    NEW_DATASET = fsSettings["new_dataset"];
 
     cv::Mat ax;
     fsSettings["axis"] >> ax;

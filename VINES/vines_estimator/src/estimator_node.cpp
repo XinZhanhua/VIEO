@@ -167,7 +167,10 @@ void encoder_callback(const std_msgs::Header::ConstPtr& msg)
 {
     std::string frame_id = msg->frame_id;
     double encoder_t = msg->stamp.toSec();
-    estimator.encoder_data = std::stoi(frame_id);  // 将字符串转换为整数
+    if (NEW_DATASET)
+        estimator.encoder_data = msg->seq;
+    else
+        estimator.encoder_data = std::stoi(msg->frame_id);  // 将字符串转换为整数
     estimator.encoder_angle = (double)(estimator.encoder_data - 2048) / 4096 * 2 * CV_PI;
     if (estimator.encoder_data > 3000 && estimator.last_encoder_data < 1000)
         estimator.rot_times--;

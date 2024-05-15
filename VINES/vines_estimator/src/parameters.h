@@ -18,7 +18,7 @@ extern double INIT_DEPTH;
 extern double MIN_PARALLAX;
 extern int ENCODER_ENABLE;
 extern int ESTIMATE_EXTRINSIC;
-extern int ESTIMATE_AXIS;
+extern int NEW_DATASET;
 
 extern double ACC_N, ACC_W;
 extern double GYR_N, GYR_W;
