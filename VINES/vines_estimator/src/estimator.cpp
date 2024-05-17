@@ -201,7 +201,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                 last_P = Ps[WINDOW_SIZE];
                 last_R0 = Rs[0];
                 last_P0 = Ps[0];
-                for(int i = 0; i < NUM_OF_CAM; i++)
+                for(int i = 0; i <= WINDOW_SIZE; i++)
                 {
                     ric[i] = RIE[0];
                     tic[i] = TIE[0];
