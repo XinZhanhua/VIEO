@@ -129,8 +129,15 @@ public:
     Eigen::Matrix<T, 3, 3> ric = qic.matrix();
     // Eigen::Quaterniond qic(x[6], x[3], x[4], x[5]);
     // Eigen::Matrix3d ric = qic.toRotationMatrix();
-    double k = 0.5;
-    residual[0] = angle - k * acos(((ric * RIE[0].transpose()).trace() - T(1.0)) * T(0.5)) - (1 - k) * acos((((tic - TIE[0]).normalized() * (TEC[0].normalized().transpose())).trace() - T(1.0)) * T(0.5));
+    double k = 1;
+    // residual[0] = angle - k * acos(((ric * RIE[0].transpose()).trace() - T(1.0)) * T(0.5)) - (1 - k) * acos((((tic - TIE[0]).normalized() * (TEC[0].normalized().transpose())).trace() - T(1.0)) * T(0.5));
+    Eigen::Matrix<T, 3, 1> rvec;
+    Eigen::Matrix<T, 3, 3> RIC_T = ric * RIE[0].transpose();
+    ceres::RotationMatrixToAngleAxis(RIC_T.data(), rvec.data());
+    //double length = (double)ceres::sqrt(rvec[0]*rvec[0] + rvec[1]*rvec[1] + rvec[2]*rvec[2]);
+    cout << rvec << endl;
+    // cout << "angle: " << angle << "        rvec" << sqrt(rvec[0]*rvec[0] + rvec[1]*rvec[1] + rvec[2]*rvec[2]) << endl;
+    residual[0] = T(-1000.0)*(angle - (T)ceres::sqrt(rvec(0)*rvec(0) + rvec(1)*rvec(1) + rvec(2)*rvec(2)));
     return true;
   }
 

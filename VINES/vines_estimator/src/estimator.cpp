@@ -152,8 +152,8 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
     last_encoder_data = encoder_data;
     last_time = header.stamp.toSec();
 
-    // tic[frame_count] = tie[0] + Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * tec[0];
-    // ric[frame_count] = Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * rie[0];
+    tic[frame_count] = tie[0] + Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * tec[0];
+    ric[frame_count] = Utility::Rodrigues(axis_ce[0], Encoder_angle[frame_count][0]) * rie[0];
 
     // last_conframe_counttinuous_encoder_data = continuous_encoder_data;
     // if(encoder_data < 2048)
@@ -598,11 +598,11 @@ void Estimator::vector2double()
     }
     // cout << "encoder_angle_velocity" << encoder_angle_velocity << endl;
     // ProjectionEncoderFactor::sqrt_info = FOCAL_LENGTH / 1.5 / (1 + 5 * fabs(encoder_angle_velocity)) * Matrix2d::Identity();
-    for (int j = 0; j <= WINDOW_SIZE; j++)
-    {
-        tic[j] = tie[0] + Utility::Rodrigues(axis_ce[0], Encoder_angle[j][0]) * tec[0];
-        ric[j] = Utility::Rodrigues(axis_ce[0], Encoder_angle[j][0]) * rie[0];
-    }
+    // for (int j = 0; j <= WINDOW_SIZE; j++)
+    // {
+    //     tic[j] = tie[0] + Utility::Rodrigues(axis_ce[0], Encoder_angle[j][0]) * tec[0];
+    //     ric[j] = Utility::Rodrigues(axis_ce[0], Encoder_angle[j][0]) * rie[0];
+    // }
 
     // cout << "axis_ce: " << axis_ce[0] << endl;
     // cout << "Encoder_angle" << Encoder_angle[0] << endl;
@@ -1000,7 +1000,7 @@ void Estimator::optimization()
     options.trust_region_strategy_type = ceres::DOGLEG;
     options.max_num_iterations = NUM_ITERATIONS;
     // options.use_explicit_schur_complement = true;
-    // options.minimizer_progress_to_stdout = true;
+    options.minimizer_progress_to_stdout = true;
     // options.callbacks.push_back(new Observer());
     // options.use_nonmonotonic_steps = true;
     if (marginalization_flag == MARGIN_OLD)
