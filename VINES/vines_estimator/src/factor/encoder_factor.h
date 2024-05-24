@@ -116,9 +116,9 @@ class EncoderFactor : public ceres::SizedCostFunction<3, 7, 7>
 };
 //， const Eigen::Vector3d &_tic_i， const Eigen::Vector3d &__tic_j     , tic_i(_tic_i), tic_j(_tic_j)
 
-class EncoderCostFunctor {
+class EncoderCostFunctor1 {
 public:
-  EncoderCostFunctor(double angle_): angle(angle_) {}
+  EncoderCostFunctor1(double angle_): angle(angle_) {}
   // 形参: 输入参数块, 残差
   template <typename T>
   bool operator()(const T* const x, T* residual) const {
@@ -135,9 +135,62 @@ public:
     Eigen::Matrix<T, 3, 3> RIC_T = ric * RIE[0].transpose();
     ceres::RotationMatrixToAngleAxis(RIC_T.data(), rvec.data());
     //double length = (double)ceres::sqrt(rvec[0]*rvec[0] + rvec[1]*rvec[1] + rvec[2]*rvec[2]);
-    cout << rvec << endl;
+    //cout << rvec << endl;
     // cout << "angle: " << angle << "        rvec" << sqrt(rvec[0]*rvec[0] + rvec[1]*rvec[1] + rvec[2]*rvec[2]) << endl;
-    residual[0] = T(-1000.0)*(angle - (T)ceres::sqrt(rvec(0)*rvec(0) + rvec(1)*rvec(1) + rvec(2)*rvec(2)));
+    Eigen::Matrix<T, 3, 1> Axis;
+    Axis[0] = (T)axis[0].x();
+    Axis[1] = (T)axis[0].y();
+    Axis[2] = (T)axis[0].z();
+    residual[0] = T(10000.0)*(angle * Axis - rvec).norm();
+    return true;
+  }
+
+ private:
+  double angle;
+};
+
+class EncoderCostFunctor2 {
+public:
+  EncoderCostFunctor2(double angle_): angle(angle_) {}
+  // 形参: 输入参数块, 残差
+  template <typename T>
+  bool operator()(const T* const x, T* residual) const {
+    Eigen::Map<const Eigen::Matrix<T, 3, 1>> tic_(x);
+    Eigen::Matrix<T, 3, 1> tic = tic_;
+    Eigen::Map<const Eigen::Matrix<T, 4, 1>> qic_coeffs(x + 3); // 假设 x 的前三个元素用于其他目的  
+    Eigen::Quaternion<T> qic(qic_coeffs);  
+    Eigen::Matrix<T, 3, 3> ric = qic.matrix();
+    // Eigen::Quaterniond qic(x[6], x[3], x[4], x[5]);
+    // Eigen::Matrix3d ric = qic.toRotationMatrix();
+    //double length = (double)ceres::sqrt(rvec[0]*rvec[0] + rvec[1]*rvec[1] + rvec[2]*rvec[2]);
+    //cout << rvec << endl;
+    // cout << "angle: " << angle << "        rvec" << sqrt(rvec[0]*rvec[0] + rvec[1]*rvec[1] + rvec[2]*rvec[2]) << endl;
+
+    Eigen::Matrix<T, 3, 3> identity;
+    identity << T(1), T(0), T(0),
+            T(0), T(1), T(0),
+            T(0), T(0), T(1);
+    Eigen::Matrix<T, 3, 3> skewSymmetric;
+    Eigen::Matrix<T, 3, 1> Axis;
+    Axis[0] = (T)axis[0].x();
+    Axis[1] = (T)axis[0].y();
+    Axis[2] = (T)axis[0].z();
+    skewSymmetric << T(0), -Axis[2], Axis[1],
+            Axis[2], T(0), -Axis[0],
+            -Axis[1], Axis[0], T(0);
+    Eigen::Matrix<T, 3, 3> REC = ceres::cos(angle) * identity + (T(1) - ceres::cos(angle)) * (Axis * Axis.transpose()) + ceres::sin(angle) * skewSymmetric;
+    Eigen::Matrix<T, 3, 1> TEC_T;
+    Eigen::Matrix<T, 3, 1> TIE_T;
+    TEC_T[0] = (T)TEC[0].x();
+    TEC_T[1] = (T)TEC[0].y();
+    TEC_T[2] = (T)TEC[0].z();
+    TIE_T[0] = (T)TIE[0].x();
+    TIE_T[1] = (T)TIE[0].y();
+    TIE_T[2] = (T)TIE[0].z();
+    // cout << "T:  " << TEC_T << "  " << TIE_T << endl;
+    // cout << ":  " << TEC[0] << "  " << TIE[0] << endl;
+    Eigen::Matrix<T, 3, 1> derta_t = REC * TEC_T - tic + TIE_T;
+    residual[0] = T(10000.0)*derta_t.norm();
     return true;
   }
 

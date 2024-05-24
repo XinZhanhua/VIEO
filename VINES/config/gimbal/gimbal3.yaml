@@ -90,7 +90,7 @@ gyr_w: 2.6645e-4       # gyroscope bias random work noise standard deviation.   
 g_norm: 9.80654        # gravity magnitude
 
 #loop closure parameters
-loop_closure: 1                    # start loop closure
+loop_closure: 0                    # start loop closure
 load_previous_pose_graph: 0        # load and reuse previous pose graph; load from 'pose_graph_save_path'
 fast_relocalization: 1             # useful in real-time and large project
 pose_graph_save_path: "/home/huarsuma/result/vines_result/pose_graph/" # save and load path
