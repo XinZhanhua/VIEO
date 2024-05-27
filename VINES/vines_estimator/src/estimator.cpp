@@ -884,7 +884,7 @@ void Estimator::optimization()
         int j = i + 1;
     //     EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[i][0], Encoder_angle[j][0]);
     //     problem.AddResidualBlock(encoder_factor, NULL, para_Ex_Pose[i], para_Ex_Pose[j]);
-        ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor1, 1, 7>(new EncoderCostFunctor1(Encoder_angle[i][0]));
+        ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor1, 3, 7>(new EncoderCostFunctor1(Encoder_angle[i][0]));
         problem.AddResidualBlock(encoder_cost_function, NULL, para_Ex_Pose[i]);
     }
 
@@ -893,7 +893,7 @@ void Estimator::optimization()
         int j = i + 1;
     //     EncoderFactor* encoder_factor = new EncoderFactor(Encoder_angle[i][0], Encoder_angle[j][0]);
     //     problem.AddResidualBlock(encoder_factor, NULL, para_Ex_Pose[i], para_Ex_Pose[j]);
-        ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor2, 1, 7>(new EncoderCostFunctor2(Encoder_angle[i][0]));
+        ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor2, 3, 7>(new EncoderCostFunctor2(Encoder_angle[i][0]));
         problem.AddResidualBlock(encoder_cost_function, NULL, para_Ex_Pose[i]);
     }
     
@@ -1093,7 +1093,7 @@ void Estimator::optimization()
         }
 
         {
-            ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor1, 1, 7>(new EncoderCostFunctor1(Encoder_angle[0][0]));
+            ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor1, 3, 7>(new EncoderCostFunctor1(Encoder_angle[0][0]));
             ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(encoder_cost_function, NULL,
                                                             vector<double *>{para_Ex_Pose[0]},
                                                             vector<int>{0});
@@ -1106,7 +1106,7 @@ void Estimator::optimization()
         }
         
         {
-            ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor2, 1, 7>(new EncoderCostFunctor2(Encoder_angle[0][0]));
+            ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor2, 3, 7>(new EncoderCostFunctor2(Encoder_angle[0][0]));
             ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(encoder_cost_function, NULL,
                                                             vector<double *>{para_Ex_Pose[0]},
                                                             vector<int>{0});

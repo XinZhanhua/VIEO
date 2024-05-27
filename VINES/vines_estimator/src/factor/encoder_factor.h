@@ -141,7 +141,8 @@ public:
     Axis[0] = (T)axis[0].x();
     Axis[1] = (T)axis[0].y();
     Axis[2] = (T)axis[0].z();
-    residual[0] = T(10000.0)*(angle * Axis - rvec).norm();
+    Eigen::Map<Eigen::Matrix<T, 3, 1>> res(residual);
+    res = T(6000.0)*(angle * Axis - rvec);
     return true;
   }
 
@@ -190,7 +191,8 @@ public:
     // cout << "T:  " << TEC_T << "  " << TIE_T << endl;
     // cout << ":  " << TEC[0] << "  " << TIE[0] << endl;
     Eigen::Matrix<T, 3, 1> derta_t = REC * TEC_T - tic + TIE_T;
-    residual[0] = T(10000.0)*derta_t.norm();
+    Eigen::Map<Eigen::Matrix<T, 3, 1>> res(residual);
+    res = T(3000.0)*derta_t;
     return true;
   }
 
