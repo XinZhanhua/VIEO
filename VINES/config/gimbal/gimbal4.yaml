@@ -1,7 +1,7 @@
 %YAML:1.0
 
 #common parameters
-imu_topic: "/wit/imu"
+imu_topic: "/imu"
 image_topic: "/usb_cam/image_raw"
 encoder_topic: "/encoder_data"
 output_path: "/home/huarsuma/result/vines_result/"
@@ -56,9 +56,9 @@ extrinsicRotation: !!opencv-matrix
    rows: 3
    cols: 3
    dt: d
-   data: [-0.98936,   0.056179,   0.134205,
-        -0.135344,    -0.0169755,   -0.990653,
-        -0.0533757,   -0.998276,    0.0243984]
+   data: [0.123275,   0.0501595,   0.991104,
+        -0.992329,    0.0155691,   0.12264,
+        -0.00927904,   -0.99862,   0.051694]
 #theta = 0
 # extrinsicRotation: !!opencv-matrix
 #    rows: 3
@@ -72,7 +72,7 @@ extrinsicTranslation: !!opencv-matrix
    rows: 3
    cols: 1
    dt: d
-   data: [0.042361, 0.00254419, 0.0423715]
+   data: [-0.11514227, 0.00761562, 0.0746891]
 T_ec: !!opencv-matrix
    rows: 3
    cols: 1
@@ -98,12 +98,12 @@ acc_n: 0.001172246403480871           # accelerometer measurement noise standard
 gyr_n: 0.00020204653568243076          # gyroscope measurement noise standard deviation.     #0.05  0.004
 acc_w: 7.71927572290829e-05        # accelerometer bias random work noise standard deviation.  #0.02
 gyr_w: 8.335913901484618e-05       # gyroscope bias random work noise standard deviation.     #4.0e-5
-g_norm: 9.81        # gravity magnitude
+g_norm: 9.80        # gravity magnitude
 
 #loop closure parameters
 loop_closure: 1                    # start loop closure
 load_previous_pose_graph: 0        # load and reuse previous pose graph; load from 'pose_graph_save_path'
-fast_relocalization: 1             # useful in real-time and large project
+fast_relocalization: 0             # useful in real-time and large project
 pose_graph_save_path: "/home/huarsuma/result/vines_result/pose_graph/" # save and load path
 
 #unsynchronization parameters
