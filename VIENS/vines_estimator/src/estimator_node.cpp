@@ -166,7 +166,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr &imu_msg)
 void encoder_callback(const std_msgs::Header::ConstPtr& msg)
 {
     std::string frame_id = msg->frame_id;
-    double encoder_t = msg->stamp.toSec();
+    estimator.encoder_t = msg->stamp.toSec();
     if (NEW_DATASET)
         estimator.encoder_data = msg->seq;
     else
@@ -182,12 +182,12 @@ void encoder_callback(const std_msgs::Header::ConstPtr& msg)
         estimator.encoder_angle_velocity = estimator.last_encoder_angle_velocity;
     else
     {
-        estimator.encoder_angle_velocity_original = (double)(estimator.last_continuous_encoder_data - estimator.continuous_encoder_data) / 4096 * 2 * CV_PI / (encoder_t - last_encoder_t);
+        estimator.encoder_angle_velocity_original = (double)(estimator.last_continuous_encoder_data - estimator.continuous_encoder_data) / 4096 * 2 * CV_PI / (estimator.encoder_t - last_encoder_t);
         estimator.encoder_angle_velocity = 0.2*estimator.encoder_angle_velocity_original+0.8*estimator.last_encoder_angle_velocity;
     }
 
     // kalman filter
-    double dt = encoder_t - last_encoder_t;  // Sampling time
+    double dt = estimator.encoder_t - last_encoder_t;  // Sampling time
     double process_noise = 0.01;  // Process noise
     KalmanFilter kf(process_noise);
     kf.update(dt, estimator.encoder_angle, estimator.encoder_angle_velocity);
@@ -200,13 +200,13 @@ void encoder_callback(const std_msgs::Header::ConstPtr& msg)
     estimator.last_encoder_angle_velocity = estimator.encoder_angle_velocity;
     estimator.last_continuous_encoder_data = estimator.continuous_encoder_data;
     estimator.last_filtered_angle = estimator.filtered_angle;
-    last_encoder_t = encoder_t;
+    last_encoder_t = estimator.encoder_t;
 
     // write result to file
     ofstream foutC(ANGLE_OUTPUT_PATH, ios::app);
     foutC.setf(ios::fixed, ios::floatfield);
     foutC.precision(0);
-    foutC << encoder_t * 1e9 << ",";
+    foutC << estimator.encoder_t * 1e9 << ",";
     foutC.precision(5);
     foutC << estimator.encoder_data << ","
             << estimator.encoder_angle << ","

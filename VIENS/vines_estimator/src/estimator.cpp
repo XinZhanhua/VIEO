@@ -146,6 +146,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
     // continuous_encoder_data = 0.5 * (rot_times * 4096 + encoder_data) + 0.5 * last_continuous_encoder_data;
     // ROS_INFO("encoder_data: %d, continuous_encoder_data: %d, %d", encoder_data, continuous_encoder_data, rot_times);
         
+    encoder_angle = encoder_angle + encoder_angle_velocity * (header.stamp.toSec() - encoder_t);
     Encoder_angle[frame_count][0] = encoder_angle;
     Encoder_angle_original[frame_count] = encoder_angle;
     
@@ -895,6 +896,13 @@ void Estimator::optimization()
     //     problem.AddResidualBlock(encoder_factor, NULL, para_Ex_Pose[i], para_Ex_Pose[j]);
         ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor2, 3, 7>(new EncoderCostFunctor2(Encoder_angle[i][0]));
         problem.AddResidualBlock(encoder_cost_function, NULL, para_Ex_Pose[i]);
+    }
+
+    for (int i = 0; i < WINDOW_SIZE; i++)
+    {
+        int j = i + 1;
+        ceres::CostFunction* encoder_cost_function = new ceres::AutoDiffCostFunction<EncoderCostFunctor3, 1, 7, 7>(new EncoderCostFunctor3(Encoder_angle[i][0], Encoder_angle[j][0]));
+        problem.AddResidualBlock(encoder_cost_function, NULL, para_Ex_Pose[i], para_Ex_Pose[j]);
     }
     
     

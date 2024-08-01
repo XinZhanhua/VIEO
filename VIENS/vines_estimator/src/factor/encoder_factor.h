@@ -199,3 +199,34 @@ public:
  private:
   double angle;
 };
+
+class EncoderCostFunctor3 {
+public:
+  EncoderCostFunctor3(double angle_i_, double angle_j_): angle_i(angle_i_), angle_j(angle_j_) {}
+  // 形参: 输入参数块, 残差
+  template <typename T>
+  bool operator()(const T* const para_Ex_Pose_i, const T* const para_Ex_Pose_j, T* residual) const {
+    Eigen::Map<const Eigen::Matrix<T, 3, 1>> tic_i_(para_Ex_Pose_i);
+    Eigen::Matrix<T, 3, 1> tic_i = tic_i_;
+    Eigen::Map<const Eigen::Matrix<T, 4, 1>> qic_i_coeffs(para_Ex_Pose_i + 3); 
+    Eigen::Quaternion<T> qic_i(qic_i_coeffs);  
+    Eigen::Matrix<T, 3, 3> ric_i = qic_i.matrix();
+      Eigen::Map<const Eigen::Matrix<T, 3, 1>> tic_j_(para_Ex_Pose_j);
+    Eigen::Matrix<T, 3, 1> tic_j = tic_j_;
+    Eigen::Map<const Eigen::Matrix<T, 4, 1>> qic_j_coeffs(para_Ex_Pose_j + 3); 
+    Eigen::Quaternion<T> qic_j(qic_j_coeffs);  
+    Eigen::Matrix<T, 3, 3> ric_j = qic_j.matrix();
+
+    Eigen::Matrix<T, 3, 3> RIC_i_T = ric_i * RIE[0].transpose();
+    T trace_i = RIC_i_T(0, 0) + RIC_i_T(1, 1) + RIC_i_T(2, 2);
+    Eigen::Matrix<T, 3, 3> RIC_j_T = ric_j * RIE[0].transpose();
+    T trace_i = RIC_j_T(0, 0) + RIC_j_T(1, 1) + RIC_j_T(2, 2);
+
+    Eigen::Map<Eigen::Matrix<T, 3, 1>> res(residual);
+    res = T(1000.0)*(ceres::acos(trace_j*T(0.5) - T(0.5))-ceres::acos(trace_i*T(0.5) - T(0.5))-(T)(angle_j-angle_i));
+    return true;
+  }
+
+ private:
+  double angle_i, angle_j;
+};
