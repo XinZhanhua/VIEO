@@ -15,7 +15,7 @@ static void reduceVector(vector<Derived> &v, vector<uchar> status)
 // create keyframe online
 KeyFrame::KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3d &_vio_R_w_i, cv::Mat &_image,
 		           vector<cv::Point3f> &_point_3d, vector<cv::Point2f> &_point_2d_uv, vector<cv::Point2f> &_point_2d_norm,
-		           vector<double> &_point_id, int _sequence)
+		           vector<double> &_point_id, int _sequence, int _encoder_data)
 {
 	time_stamp = _time_stamp;
 	index = _index;
@@ -40,6 +40,7 @@ KeyFrame::KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3
 	computeBRIEFPoint();
 	if(!DEBUG_IMAGE)
 		image.release();
+	encoder_data = _encoder_data;
 }
 
 // load previous keyframe
@@ -487,6 +488,7 @@ bool KeyFrame::findConnection(KeyFrame* old_kf)
 
 	    	has_loop = true;
 	    	loop_index = old_kf->index;
+			int loop_ed = old_kf->encoder_data;
 	    	loop_info << relative_t.x(), relative_t.y(), relative_t.z(),
 	    	             relative_q.w(), relative_q.x(), relative_q.y(), relative_q.z(),
 	    	             relative_yaw;
@@ -514,6 +516,7 @@ bool KeyFrame::findConnection(KeyFrame* old_kf)
 			    t_q_index.values.push_back(Q.y());
 			    t_q_index.values.push_back(Q.z());
 			    t_q_index.values.push_back(index);
+				t_q_index.values.push_back(loop_ed);
 			    msg_match_points.channels.push_back(t_q_index);
 			    pub_match_points.publish(msg_match_points);
 	    	}

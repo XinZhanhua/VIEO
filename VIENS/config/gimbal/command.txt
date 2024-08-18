@@ -17,6 +17,6 @@ rosrun pose_recorder pose_recorder ~/catkin_ws/src/pose_recorder/output/out.csv
 
 roslaunch lego_loam run.launch
 
-~/vines_ws/src/VINES/config/gimbal/command_vins.sh
-~/vines_ws/src/VINES/config/gimbal/command_vines.sh
-~/vines_ws/src/VINES/config/gimbal/command_legoloam.sh
+~/vines_ws/src/VIENS/config/gimbal/command_vins.sh
+~/vines_ws/src/VIENS/config/gimbal/command_vines.sh
+~/vines_ws/src/VIENS/config/gimbal/command_legoloam.sh

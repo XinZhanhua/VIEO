@@ -90,6 +90,12 @@ void new_sequence()
     m_buf.unlock();
 }
 
+void encoder_callback(const std_msgs::Header::ConstPtr& msg)
+{
+    double encoder_t = msg->stamp.toSec();
+    posegraph.encoder_data = msg->seq;
+}
+
 void image_callback(const sensor_msgs::ImageConstPtr &image_msg)
 {
     //ROS_INFO("image_callback!");
@@ -412,7 +418,7 @@ void process()
                 }
 
                 KeyFrame* keyframe = new KeyFrame(pose_msg->header.stamp.toSec(), frame_index, T, R, image,
-                                   point_3d, point_2d_uv, point_2d_normal, point_id, sequence);   
+                                   point_3d, point_2d_uv, point_2d_normal, point_id, sequence, posegraph.encoder_data);   
                 m_process.lock();
                 start_flag = 1;
                 posegraph.addKeyFrame(keyframe, 1);

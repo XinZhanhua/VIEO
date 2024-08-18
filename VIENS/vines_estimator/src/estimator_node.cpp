@@ -342,7 +342,8 @@ void process()
                 Matrix3d relo_r = relo_q.toRotationMatrix();
                 int frame_index;
                 frame_index = relo_msg->channels[0].values[7];
-                estimator.setReloFrame(frame_stamp, frame_index, match_points, relo_t, relo_r);
+                int frame_encoder = relo_msg->channels[0].values[8];
+                estimator.setReloFrame(frame_stamp, frame_index, frame_encoder, match_points, relo_t, relo_r);
             }
 
             ROS_DEBUG("processing vision data with stamp %f \n", img_msg->header.stamp.toSec());

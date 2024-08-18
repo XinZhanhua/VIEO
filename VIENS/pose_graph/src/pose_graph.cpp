@@ -315,6 +315,7 @@ int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index)
         cv::resize(keyframe->image, compressed_image, cv::Size(376, 240));
         putText(compressed_image, "feature_num:" + to_string(feature_num), cv::Point2f(10, 10), FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(255));
         image_pool[frame_index] = compressed_image;
+        ed_pool[frame_index] = keyframe->encoder_data;
     }
     TicToc tmp_t;
     //first query; then add this frame into database!
@@ -399,6 +400,7 @@ void PoseGraph::addKeyFrameIntoVoc(KeyFrame* keyframe)
         cv::resize(keyframe->image, compressed_image, cv::Size(376, 240));
         putText(compressed_image, "feature_num:" + to_string(feature_num), cv::Point2f(10, 10), FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(255));
         image_pool[keyframe->index] = compressed_image;
+        ed_pool[keyframe->index] = keyframe->encoder_data;
     }
 
     db.add(keyframe->brief_descriptors);

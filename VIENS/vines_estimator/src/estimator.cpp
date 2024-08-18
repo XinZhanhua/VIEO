@@ -1376,10 +1376,11 @@ void Estimator::slideWindowOld()
         f_manager.removeBack();
 }
 
-void Estimator::setReloFrame(double _frame_stamp, int _frame_index, vector<Vector3d> &_match_points, Vector3d _relo_t, Matrix3d _relo_r)
+void Estimator::setReloFrame(double _frame_stamp, int _frame_index, int _encoder_data, vector<Vector3d> &_match_points, Vector3d _relo_t, Matrix3d _relo_r)
 {
     relo_frame_stamp = _frame_stamp;
     relo_frame_index = _frame_index;
+    relo_encoder_data = _encoder_data;
     match_points.clear();
     match_points = _match_points;
     prev_relo_t = _relo_t;
@@ -1390,9 +1391,34 @@ void Estimator::setReloFrame(double _frame_stamp, int _frame_index, vector<Vecto
         {
             relo_frame_local_index = i;
             relocalization_info = 1;
-            for (int j = 0; j < SIZE_POSE; j++)
-                relo_Pose[j] = para_Pose[i][j];
+            getReloPose(i, relo_encoder_data);
+            // for (int j = 0; j < SIZE_POSE; j++)
+            //     relo_Pose[j] = para_Pose[i][j];
         }
     }
 }
 
+void Estimator::getReloPose(int index, int relo_ed)
+{
+    int relo_ea = (double)(relo_ed - 2048) / 4096 * 2 * CV_PI;
+    Vector3d relo_tic = tie[0] + Utility::Rodrigues(axis_ce[0], relo_ea) * tec[0];
+    Matrix3d relo_ric = Utility::Rodrigues(axis_ce[0], relo_ea) * rie[0];
+
+    int now_ea = Encoder_angle[index][0];
+    Vector3d now_tic = tie[0] + Utility::Rodrigues(axis_ce[0], now_ea) * tec[0];
+    Matrix3d now_ric = Utility::Rodrigues(axis_ce[0], now_ea) * rie[0];
+    Matrix3d now_r = Quaterniond(para_Pose[index][6], para_Pose[index][3], para_Pose[index][4], para_Pose[index][5]).normalized().toRotationMatrix();
+    Vector3d now_t = Vector3d(para_Pose[index][0], para_Pose[index][1], para_Pose[index][2]);
+
+    Vector3d relo_t = now_t + now_tic - relo_tic;
+    Matrix3d relo_r = now_r * now_ric * relo_ric.transpose();
+
+    relo_Pose[0] = relo_t.x();
+    relo_Pose[1] = relo_t.y();
+    relo_Pose[2] = relo_t.z();
+    Quaterniond relo_q{relo_r};
+    relo_Pose[3] = relo_q.x();
+    relo_Pose[4] = relo_q.y();
+    relo_Pose[5] = relo_q.z();
+    relo_Pose[6] = relo_q.w();
+}

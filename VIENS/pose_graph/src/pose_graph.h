@@ -55,6 +55,7 @@ public:
 	// world frame( base sequence or first sequence)<----> cur sequence frame  
 	Vector3d w_t_vio;
 	Matrix3d w_r_vio;
+	int encoder_data;
 
 
 private:
@@ -74,6 +75,7 @@ private:
 	int sequence_cnt;
 	vector<bool> sequence_loop;
 	map<int, cv::Mat> image_pool;
+	map<int, int> ed_pool;
 	int earliest_loop_index;
 	int base_sequence;
 
